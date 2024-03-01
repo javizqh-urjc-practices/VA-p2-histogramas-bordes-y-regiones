@@ -114,6 +114,8 @@ namespace CVParams {
   inline std::string HOUGH = "Hough accumulator [0-255]";
   inline std::string AREA = "Area [0-500]";
 
+  inline int CORRELATION = 0;
+
   float PI = 3.14159265;
 }
 
@@ -142,6 +144,20 @@ cv::Mat createLowPassFilter(const cv::Mat &image, const int size)
   return horiz_Filter;
 }
 
+cv::Mat expandHistogram(const cv::Mat &image, const double max, const double min,
+                          const int max_range, const int min_range)
+{
+  cv::Mat tmp(image.rows, image.cols, CV_8U);
+
+  for (int i = 0; i < image.rows; i++) {
+    for (int j = 0; j < image.cols; j++) {
+      tmp.at<u_char>(i, j) = ((image.at<u_char>(i, j)  - min)/(max - min)) * (max_range - min_range) + min_range;
+    }
+  }
+
+  return tmp;
+}
+
 cv::Mat contractHistogram(const cv::Mat &image, const double max, const double min,
                           const int shrink_max, const int shrink_min)
 {
@@ -156,28 +172,76 @@ cv::Mat contractHistogram(const cv::Mat &image, const double max, const double m
   return tmp;
 }
 
-void drawHistogram(int histSize, const cv::Mat& original, const cv::Mat& shrink) {
+cv::Mat substractImages(const cv::Mat &image1, const cv::Mat &image2) {
+  // The images must be of equal size and type
+  cv::Mat tmp(image1.rows, image1.cols, CV_8U);
+
+  for (int i = 0; i < image1.rows; i++) {
+    for (int j = 0; j < image1.cols; j++) {
+      tmp.at<u_char>(i, j) = image1.at<u_char>(i, j) - image2.at<u_char>(i, j);
+    }
+  }
+
+  return tmp;
+}
+
+void drawHistogram(int histSize, const cv::Mat& original, const cv::Mat& shrink,
+                   const cv::Mat& substract, const cv::Mat& expand, const cv::Mat& equalized) {
   // Draw the histograms for B, G and R
   int hist_w = 512, hist_h = 400;
   int bin_w = cvRound( (double) hist_w / histSize);
+  int shrink_min = cv::getTrackbarPos(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME);
+  int shrink_max = cv::getTrackbarPos(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME) + 128;
 
-  cv::Mat histImage(hist_h, hist_w, CV_8UC3, cv::Scalar(0, 0, 0) );
+  cv::Mat histImage(hist_h + 100, hist_w, CV_8UC3, cv::Scalar(0, 0, 0) );
 
-  // normalize the histograms between 0 and histImage.rows
-  cv::normalize(original, original, 0, histImage.rows, cv::NORM_MINMAX, -1, cv::Mat() );
-  cv::normalize(shrink, shrink, 0, histImage.rows, cv::NORM_MINMAX, -1, cv::Mat() );
+  // normalize the histograms between 0 and histImage.rows - 100
+  cv::normalize(original, original, 0, histImage.rows - 100, cv::NORM_MINMAX, -1, cv::Mat() );
+  cv::normalize(shrink, shrink, 0, histImage.rows - 100, cv::NORM_MINMAX, -1, cv::Mat() );
+  cv::normalize(substract, substract, 0, histImage.rows - 100, cv::NORM_MINMAX, -1, cv::Mat() );
+  cv::normalize(expand, expand, 0, histImage.rows - 100, cv::NORM_MINMAX, -1, cv::Mat() );
+  cv::normalize(equalized, equalized, 0, histImage.rows - 100, cv::NORM_MINMAX, -1, cv::Mat() );
 
   // Draw the intensity line for histograms
   for (int i = 1; i < histSize; i++) {
     cv::line(
-      histImage, cv::Point(bin_w * (i - 1), hist_h - cvRound(original.at<float>(i - 1)) ),
-      cv::Point(bin_w * (i), hist_h - cvRound(original.at<float>(i)) ),
+      histImage, cv::Point(bin_w * (i - 1), hist_h + 100 - cvRound(original.at<float>(i - 1)) ),
+      cv::Point(bin_w * (i), hist_h + 100 - cvRound(original.at<float>(i)) ),
       cv::Scalar(255, 0, 0), 2, 8, 0);
     cv::line(
-      histImage, cv::Point(bin_w * (i - 1), hist_h - cvRound(shrink.at<float>(i - 1)) ),
-      cv::Point(bin_w * (i), hist_h - cvRound(shrink.at<float>(i)) ),
+      histImage, cv::Point(bin_w * (i - 1), hist_h + 100 - cvRound(shrink.at<float>(i - 1)) ),
+      cv::Point(bin_w * (i), hist_h + 100 - cvRound(shrink.at<float>(i)) ),
       cv::Scalar(0, 0, 255), 2, 8, 0);
+    cv::line(
+      histImage, cv::Point(bin_w * (i - 1), hist_h + 100 - cvRound(substract.at<float>(i - 1)) ),
+      cv::Point(bin_w * (i), hist_h + 100 - cvRound(substract.at<float>(i)) ),
+      cv::Scalar(255, 255, 0), 2, 8, 0);
+    cv::line(
+      histImage, cv::Point(bin_w * (i - 1), hist_h + 100 - cvRound(expand.at<float>(i - 1)) ),
+      cv::Point(bin_w * (i), hist_h + 100 - cvRound(expand.at<float>(i)) ),
+      cv::Scalar(0, 255, 255), 2, 8, 0);
+    cv::line(
+      histImage, cv::Point(bin_w * (i - 1), hist_h + 100 - cvRound(equalized.at<float>(i - 1)) ),
+      cv::Point(bin_w * (i), hist_h + 100 - cvRound(equalized.at<float>(i)) ),
+      cv::Scalar(0, 255, 0), 2, 8, 0);
   }
+
+  // Compare histograms
+  double comp_shrink = cv::compareHist(original, shrink, CVParams::CORRELATION);
+  double comp_substract = cv::compareHist(original, substract, CVParams::CORRELATION);
+  double comp_expand = cv::compareHist(original, expand, CVParams::CORRELATION);
+  double comp_equalized = cv::compareHist(original, equalized, CVParams::CORRELATION);
+
+  // Write text
+  std::string shrink_text = "Shrink [" + std::to_string(shrink_min) + "," + std::to_string(shrink_max)+"]: " + std::to_string(comp_shrink);
+  std::string substract_text = "Substract: " + std::to_string(comp_substract);
+  std::string expand_text = "Stretch: " + std::to_string(comp_expand);
+  std::string equalized_text = "Eqhist: " + std::to_string(comp_equalized);
+
+  cv::putText(histImage, shrink_text, cv::Point(10, 20), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255));
+  cv::putText(histImage, substract_text, cv::Point(10, 40), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 0));
+  cv::putText(histImage, expand_text, cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 255));
+  cv::putText(histImage, equalized_text, cv::Point(10, 80), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0));
 
   // Show images
   cv::imshow(CVParams::WINDOW_HIST_NAME, histImage);
@@ -193,7 +257,7 @@ void initWindow()
   // Show images in a different windows
   cv::namedWindow(CVParams::WINDOW_NAME);
   // create Trackbar and add to a window
-  cv::createTrackbar(CVParams::MODE, CVParams::WINDOW_NAME, nullptr, 4, 0); 
+  cv::createTrackbar(CVParams::MODE, CVParams::WINDOW_NAME, nullptr, 4, 0);
   cv::createTrackbar(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME, nullptr, 127, 0);
   cv::createTrackbar(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME, nullptr, 127, 0);
   cv::createTrackbar(CVParams::HOUGH, CVParams::WINDOW_NAME, nullptr, 255, 0);
@@ -235,7 +299,8 @@ const
   shrink_max = cv::getTrackbarPos(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME);
 
   // Option 1
-  cv::Mat bw, filter, complex_image, filtered_image, hist_bw, hist_shrink, shrink_bw;
+  cv::Mat bw, filter, complex_image, filtered_image, shrink_bw, difference, expand_bw, eq_bw;
+  cv::Mat hist_bw, hist_shrink, hist_subs, hist_expand, eqhist;
   // Establish the number of bins
   int histSize = 256;
   float range[] = {0, 256};       //the upper boundary is exclusive
@@ -251,25 +316,35 @@ const
   {
   case 1:
     cv::cvtColor(in_image_rgb, bw, cv::COLOR_BGR2GRAY);
+    cv::minMaxLoc(bw, &min, &max);
+    cv::calcHist(&bw, 1, 0, cv::Mat(), hist_bw, 1, &histSize, &histRange, uniform, accumulate);
 
-    // Filtering Spectrum 
+    // Filtering Spectrum
     complex_image = fftShift(computeDFT(bw));
-    filter = CVFunctions::createLowPassFilter(complex_image, 50);
+    filter = CVFunctions::createLowPassFilter(complex_image, 20);
     cv::mulSpectrums(complex_image, filter, complex_image, 0);
     complex_image = fftShift(complex_image);
     cv::idft(complex_image, filtered_image, cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
     cv::normalize(filtered_image, filtered_image, 0, 1, cv::NORM_MINMAX);
 
-    // Calculating histogram
-    calcHist(&bw, 1, 0, cv::Mat(), hist_bw, 1, &histSize, &histRange, uniform, accumulate);
-    cv::minMaxLoc(bw, &min, &max);
+    // Calculating histogram and shrink
     shrink_bw = CVFunctions::contractHistogram(bw, max, min, shrink_max + 128, shrink_min);
-    // cv::normalize(shrink_bw, shrink_bw, 0, 255, cv::NORM_MINMAX);
-    calcHist(&shrink_bw, 1, 0, cv::Mat(), hist_shrink, 1, &histSize, &histRange, uniform, accumulate);
+    cv::calcHist(&shrink_bw, 1, 0, cv::Mat(), hist_shrink, 1, &histSize, &histRange, uniform, accumulate);
 
+    // Combine the 2 images
+    difference = CVFunctions::substractImages(bw, shrink_bw);    
+    cv::calcHist(&difference, 1, 0, cv::Mat(), hist_subs, 1, &histSize, &histRange, uniform, accumulate);
 
-    CVFunctions::drawHistogram(histSize, hist_bw, hist_shrink);
-    cv::imshow(CVParams::WINDOW_NAME, filtered_image);
+    // Expand the histogram
+    expand_bw = CVFunctions::expandHistogram(difference, max, min, range[1], range[0]);
+    cv::calcHist(&expand_bw, 1, 0, cv::Mat(), hist_expand, 1, &histSize, &histRange, uniform, accumulate);
+
+    // Equalize the histogram
+    cv::equalizeHist(expand_bw, eq_bw);
+    cv::calcHist(&eq_bw, 1, 0, cv::Mat(), eqhist, 1, &histSize, &histRange, uniform, accumulate);
+
+    CVFunctions::drawHistogram(histSize, hist_bw, hist_shrink, hist_subs, hist_expand, eqhist);
+    cv::imshow(CVParams::WINDOW_NAME, eq_bw);
     break;
   case 2:
     cv::imshow(CVParams::WINDOW_NAME, out_image_rgb);
