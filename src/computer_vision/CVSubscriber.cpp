@@ -278,7 +278,7 @@ CVGroup CVSubscriber::processing(
   const pcl::PointCloud<pcl::PointXYZRGB> in_pointcloud)
 const
 {
-  int mode_param, shrink_min, shrink_max;
+  int mode_param, shrink_min, shrink_max, hough_accumulator;
 
   // Create output images
   cv::Mat out_image_rgb, out_image_depth;
@@ -297,6 +297,7 @@ const
   mode_param = cv::getTrackbarPos(CVParams::MODE, CVParams::WINDOW_NAME);
   shrink_min = cv::getTrackbarPos(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME);
   shrink_max = cv::getTrackbarPos(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME);
+  hough_accumulator = cv::getTrackbarPos(CVParams::HOUGH, CVParams::WINDOW_NAME);
 
   // Option 1
   cv::Mat bw, filter, complex_image, filtered_image, shrink_bw, difference, expand_bw, eq_bw;
@@ -309,6 +310,8 @@ const
 
   cv::Mat m;
   double min, max;
+
+  // Option 2
 
   // ----------------------------------------------------------------
 
@@ -347,11 +350,69 @@ const
     cv::imshow(CVParams::WINDOW_NAME, eq_bw);
     break;
   case 2:
+  {
+    cv::Mat edges, hsv, thresh;
+    std::vector<cv::Vec2f> lines;   // will hold the results of the detection (rho, theta)
+
+    // Filter the color of the clocks
+    cv::cvtColor(in_image_rgb, hsv, cv::COLOR_BGR2HSV);
+    cv::inRange(hsv, cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 35), thresh);
+    cv::medianBlur(thresh, thresh, 3);
+
+    // Edge detection
+    cv::Canny(thresh, edges, 50, 120, 3);
+
+    // Standard Hough Line Transform
+    cv::HoughLines(edges, lines, 1, CVParams::PI / 180, hough_accumulator, 0, 0);   // runs the actual detection
+
+    // Draw the lines
+    for (size_t i = 0; i < lines.size(); i++) {
+      float rho = lines[i][0], theta = lines[i][1];
+      cv::Point pt1, pt2;
+      double a = std::cos(theta), b = std::sin(theta);
+      double x0 = a * rho, y0 = b * rho;
+      pt1.x = cvRound(x0 + 1000 * (-b));
+      pt1.y = cvRound(y0 + 1000 * ( a));
+      pt2.x = cvRound(x0 - 1000 * (-b));
+      pt2.y = cvRound(y0 - 1000 * ( a));
+      cv::line(out_image_rgb, pt1, pt2, cv::Scalar(0, 0, 255), 3, cv::LINE_AA);
+    }
+
     cv::imshow(CVParams::WINDOW_NAME, out_image_rgb);
     break;
+  }
   case 3:
+  {
+    cv::Mat edges, hsv, thresh;
+    std::vector<cv::Vec3f> circles;   // will hold the results of the detection (rho, theta)
+
+    // Filter the color of the clocks
+    cv::cvtColor(in_image_rgb, hsv, cv::COLOR_BGR2HSV);
+    cv::inRange(hsv, cv::Scalar(15, 100, 0), cv::Scalar(100, 255, 255), thresh);
+
+    // Edge detection
+    cv::medianBlur(thresh, thresh, 25);
+
+    cv::HoughCircles(
+      thresh, circles, cv::HOUGH_GRADIENT, 2,
+      thresh.rows / 16,             // change this value to detect circles with different distances to each other
+      100, 30, 5, 50              // change the last two parameters (min_radius & max_radius) to detect larger circles
+    );
+
+    // Draw the circles
+    for (size_t i = 0; i < circles.size(); i++) {
+      cv::Vec3i c = circles[i];
+      cv::Point center = cv::Point(c[0], c[1]);
+      // circle center
+      cv::circle(out_image_rgb, center, 1, cv::Scalar(0, 255, 0), 3, cv::LINE_AA);
+      // circle outline
+      int radius = c[2];
+      cv::circle(out_image_rgb, center, radius, cv::Scalar(0, 0, 255), 3, cv::LINE_AA);
+    }
+
     cv::imshow(CVParams::WINDOW_NAME, out_image_rgb);
     break;
+  }
   case 4:
     cv::imshow(CVParams::WINDOW_NAME, out_image_rgb);
     break;
