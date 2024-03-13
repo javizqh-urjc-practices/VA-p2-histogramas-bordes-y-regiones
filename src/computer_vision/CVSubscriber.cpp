@@ -111,10 +111,11 @@ inline std::string SHRINK_MIN = "Shrink min value [0-127]";
 inline std::string SHRINK_MAX = "Shrink max value [128-255]";
 inline std::string HOUGH = "Hough accumulator [0-255]";
 inline std::string AREA = "Area [0-500]";
+inline std::string NUM_OF_POINTS = "NUM_OF_POINTS [0-500]";
 
 inline int CORRELATION = 0;
 
-int GAUSSIAN = 5;
+int GAUSSIAN = 3;
 int H_MIN = 86;
 int S_MIN = 19;
 int V_MIN = 113;
@@ -280,6 +281,7 @@ cv::createTrackbar(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME, nullptr, 127, 0)
 cv::createTrackbar(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME, nullptr, 127, 0);
 cv::createTrackbar(CVParams::HOUGH, CVParams::WINDOW_NAME, nullptr, 255, 0);
 cv::createTrackbar(CVParams::AREA, CVParams::WINDOW_NAME, nullptr, 500, 0);
+cv::createTrackbar(CVParams::NUM_OF_POINTS, CVParams::WINDOW_NAME, nullptr, 500, 0);
 }
 
 
@@ -297,7 +299,7 @@ const cv::Mat in_image_depth,
 const pcl::PointCloud<pcl::PointXYZRGB> in_pointcloud)
 const
 {
-int mode_param, shrink_min, shrink_max, hough_accumulator;
+int mode_param, shrink_min, shrink_max, hough_accumulator, num_of_points;
 
 // Create output images
 cv::Mat out_image_rgb, out_image_depth;
@@ -317,6 +319,7 @@ mode_param = cv::getTrackbarPos(CVParams::MODE, CVParams::WINDOW_NAME);
 shrink_min = cv::getTrackbarPos(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME);
 shrink_max = cv::getTrackbarPos(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME);
 hough_accumulator = cv::getTrackbarPos(CVParams::HOUGH, CVParams::WINDOW_NAME);
+num_of_points = cv::getTrackbarPos(CVParams::NUM_OF_POINTS, CVParams::WINDOW_NAME);
 
 // Option 1
 cv::Mat bw, filter, complex_image, filtered_image, shrink_bw, difference, expand_bw, eq_bw;
@@ -457,12 +460,15 @@ case 4:
   // Contours
   cv::findContours(edges, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 
-  // Drawing contours
+  // Drawing contours (only if > num of points)
   cloned_image = in_image_rgb.clone();
   for (size_t i = 0; i < contours.size(); i++) {
-    color = cv::Scalar(rand() % 255, rand() % 255, rand() % 255);
-    cv::drawContours(cloned_image, contours, static_cast<int>(i), color, 2, cv::LINE_8);
-    CVFunctions::drawCentroid(contours[i], color, cloned_image);
+    if (static_cast<int>(contours[i].size()) > num_of_points)
+    {
+      color = cv::Scalar(rand() % 255, rand() % 255, rand() % 255);
+      cv::drawContours(cloned_image, contours, static_cast<int>(i), color, 2, cv::LINE_8);
+      CVFunctions::drawCentroid(contours[i], color, cloned_image);
+    }
   }
 
   cv::imshow(CVParams::WINDOW_NAME, cloned_image);
