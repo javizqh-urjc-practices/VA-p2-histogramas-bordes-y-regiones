@@ -176,6 +176,20 @@ for (int i = 0; i < image.rows; i++) { for (int j = 0; j < image.cols; j++) {
 return tmp;
 }
 
+void drawCentroid(std::vector<cv::Point> contour, cv::Scalar color, cv::Mat target_image)
+{
+  // Compute centroid
+  cv::Moments m = cv::moments(contour);
+  int cx = static_cast<int>(m.m10 / m.m00);
+  int cy = static_cast<int>(m.m01 / m.m00);
+
+  // Draw the mark into the image
+  cv::circle(target_image, cv::Point(cx, cy), 5, color, -1); 
+  std::string text = std::to_string(contour.size());
+  cv::putText(target_image, text, cv::Point(cx, cy - 10), cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 2);
+
+}
+
 cv::Mat substractImages(const cv::Mat &image1, const cv::Mat &image2) {
 // The images must be of equal size and type
 cv::Mat tmp(image1.rows, image1.cols, CV_8U);
@@ -267,6 +281,7 @@ cv::createTrackbar(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME, nullptr, 127, 0)
 cv::createTrackbar(CVParams::HOUGH, CVParams::WINDOW_NAME, nullptr, 255, 0);
 cv::createTrackbar(CVParams::AREA, CVParams::WINDOW_NAME, nullptr, 500, 0);
 }
+
 
 }
 
@@ -447,6 +462,7 @@ case 4:
   for (size_t i = 0; i < contours.size(); i++) {
     color = cv::Scalar(rand() % 255, rand() % 255, rand() % 255);
     cv::drawContours(cloned_image, contours, static_cast<int>(i), color, 2, cv::LINE_8);
+    CVFunctions::drawCentroid(contours[i], color, cloned_image);
   }
 
   cv::imshow(CVParams::WINDOW_NAME, cloned_image);
