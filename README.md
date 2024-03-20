@@ -9,6 +9,9 @@ This project contains code examples created in Visual Studio Code for Computer V
 
 This package is recommended to use with the [TIAGO](https://github.com/jmguerreroh/tiago_simulator) simulator.
 
+## Exercise 3 Video
+[Link_to_video.mp4](https://drive.google.com/file/d/15NIynJxYtdAGjDB31UIq1Ajo-4wTLSkU/view?usp=sharing)
+
 # Installation 
 
 You need to have previously installed ROS 2. Please follow this [guide](https://docs.ros.org/en/humble/Installation.html) if you don't have it.
