@@ -115,6 +115,7 @@ inline std::string NUM_OF_POINTS = "NUM_OF_POINTS [0-500]";
 
 inline int CORRELATION = 0;
 
+bool show_hsv_mode = true;
 int GAUSSIAN = 3;
 int H_MIN = 86;
 int S_MIN = 19;
@@ -282,6 +283,19 @@ cv::createTrackbar(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME, nullptr, 127, 0)
 cv::createTrackbar(CVParams::HOUGH, CVParams::WINDOW_NAME, nullptr, 255, 0);
 cv::createTrackbar(CVParams::AREA, CVParams::WINDOW_NAME, nullptr, 500, 0);
 cv::createTrackbar(CVParams::NUM_OF_POINTS, CVParams::WINDOW_NAME, nullptr, 500, 0);
+
+// parameters for window testing
+// cv::createTrackbar("h", CVParams::WINDOW_NAME, nullptr, 255, 0);
+// cv::createTrackbar("s", CVParams::WINDOW_NAME, nullptr, 255, 0);
+// cv::createTrackbar("v", CVParams::WINDOW_NAME, nullptr, 255, 0);
+
+// parameters for blue lines testing
+// cv::createTrackbar("h_start", CVParams::WINDOW_NAME, nullptr, 255, 0);
+// cv::createTrackbar("s_start", CVParams::WINDOW_NAME, nullptr, 255, 0);
+// cv::createTrackbar("v_start", CVParams::WINDOW_NAME, nullptr, 255, 0);
+// cv::createTrackbar("h_end", CVParams::WINDOW_NAME, nullptr, 255, 0);
+// cv::createTrackbar("s_end", CVParams::WINDOW_NAME, nullptr, 255, 0);
+// cv::createTrackbar("v_end", CVParams::WINDOW_NAME, nullptr, 255, 0);
 }
 
 
@@ -331,9 +345,32 @@ std::vector<std::vector<cv::Point>> contours;
 std::vector<cv::Vec4i> hierarchy;
 std::string text;
 
+// Default color values
+int h_window = 120;
+int s_window = 155;
+int v_window = 50;
+
 cv::Scalar color;
 cv::Scalar lower(CVParams::H_MIN,CVParams::S_MIN,CVParams::V_MIN);
 cv::Scalar upper(CVParams::H_MAX,CVParams::S_MAX,CVParams::V_MAX);
+
+// ---- Use for selecting hsv for window ----
+// Modify initWindow() for the trackers
+  // h_window = cv::getTrackbarPos("h", CVParams::WINDOW_NAME);
+  // s_window = cv::getTrackbarPos("s", CVParams::WINDOW_NAME);
+  // v_window = cv::getTrackbarPos("v", CVParams::WINDOW_NAME);
+
+// ---- Use for selecting hsv for blue lines ----
+// Modify initWindow() for the trackers
+// Remove or comment also the upper/lower declarations
+  // h_start = cv::getTrackbarPos("h_start", CVParams::WINDOW_NAME);
+  // s_start = cv::getTrackbarPos("s_start", CVParams::WINDOW_NAME);
+  // v_start = cv::getTrackbarPos("v_start", CVParams::WINDOW_NAME);
+  // h_end = cv::getTrackbarPos("h_end", CVParams::WINDOW_NAME);
+  // s_end = cv::getTrackbarPos("s_end", CVParams::WINDOW_NAME);
+  // v_end = cv::getTrackbarPos("v_end", CVParams::WINDOW_NAME);
+  // cv::Scalar lower(h_start,s_start,v_start);
+  // cv::Scalar upper(h_start,s_start,v_start);
 
 // Establish the number of bins
 int histSize = 256;
@@ -453,7 +490,7 @@ case 4:
 
   // Filtering by color
   cv::inRange(hsv_image, lower, upper, lines_filter);
-  cv::inRange(hsv_image, cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 35), window_filter);
+  cv::inRange(hsv_image, cv::Scalar(0, 0, 0), cv::Scalar(h_window, s_window, v_window), window_filter);
   filtered_image = lines_filter + window_filter;
 
   // Gaussian blur
