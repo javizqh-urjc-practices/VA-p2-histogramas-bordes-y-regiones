@@ -20,7 +20,7 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 #include "rclcpp/rclcpp.hpp"
-
+ 
 // Copied because it is only allowed to edit this file
 // Compute the Discrete fourier transform
 cv::Mat computeDFT(const cv::Mat &image)
@@ -299,7 +299,7 @@ const cv::Mat in_image_depth,
 const pcl::PointCloud<pcl::PointXYZRGB> in_pointcloud)
 const
 {
-int mode_param, shrink_min, shrink_max, hough_accumulator, num_of_points;
+int mode_param, shrink_min, shrink_max, hough_accumulator, num_of_points, num_of_lines;
 
 // Create output images
 cv::Mat out_image_rgb, out_image_depth;
@@ -314,7 +314,7 @@ out_pointcloud = in_pointcloud;
 // First time execution
 CVFunctions::initWindow();
 
-// Obtaining Parameter
+// Obtaining Parameter 
 mode_param = cv::getTrackbarPos(CVParams::MODE, CVParams::WINDOW_NAME);
 shrink_min = cv::getTrackbarPos(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME);
 shrink_max = cv::getTrackbarPos(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME);
@@ -326,9 +326,10 @@ cv::Mat bw, filter, complex_image, filtered_image, shrink_bw, difference, expand
 cv::Mat hist_bw, hist_shrink, hist_subs, hist_expand, eqhist;
 
 // Option 4
-cv::Mat gray, edges, gauss, drawing, hsv_image, cloned_image;
+cv::Mat gray, edges, gauss, drawing, hsv_image, cloned_image, window_filter, lines_filter;
 std::vector<std::vector<cv::Point>> contours;
 std::vector<cv::Vec4i> hierarchy;
+std::string text;
 
 cv::Scalar color;
 cv::Scalar lower(CVParams::H_MIN,CVParams::S_MIN,CVParams::V_MIN);
@@ -449,7 +450,11 @@ case 4:
 
   // Convert to HSV
   cv::cvtColor(in_image_rgb, hsv_image, cv::COLOR_BGR2HSV);
-  cv::inRange(hsv_image, lower, upper, filtered_image);
+
+  // Filtering by color
+  cv::inRange(hsv_image, lower, upper, lines_filter);
+  cv::inRange(hsv_image, cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 35), window_filter);
+  filtered_image = lines_filter + window_filter;
 
   // Gaussian blur
   cv::GaussianBlur(filtered_image, gauss, cv::Size(CVParams::GAUSSIAN, CVParams::GAUSSIAN), 0);
@@ -462,14 +467,22 @@ case 4:
 
   // Drawing contours (only if > num of points)
   cloned_image = in_image_rgb.clone();
+  num_of_lines = 0;
+
   for (size_t i = 0; i < contours.size(); i++) {
     if (static_cast<int>(contours[i].size()) > num_of_points)
     {
+      num_of_lines++;
+
       color = cv::Scalar(rand() % 255, rand() % 255, rand() % 255);
-      cv::drawContours(cloned_image, contours, static_cast<int>(i), color, 2, cv::LINE_8);
+      cv::drawContours(cloned_image, contours, static_cast<int>(i), color, 4, cv::LINE_8);
       CVFunctions::drawCentroid(contours[i], color, cloned_image);
     }
   }
+
+  // Writing header
+  text = "Contours: " + std::to_string(num_of_lines);
+  cv::putText(cloned_image, text, cv::Point(10,20), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255));
 
   cv::imshow(CVParams::WINDOW_NAME, cloned_image);
   break;
