@@ -111,17 +111,25 @@ inline std::string SHRINK_MIN = "Shrink min value [0-127]";
 inline std::string SHRINK_MAX = "Shrink max value [128-255]";
 inline std::string HOUGH = "Hough accumulator [0-255]";
 inline std::string AREA = "Area [0-500]";
-inline std::string NUM_OF_POINTS = "NUM_OF_POINTS [0-500]";
 
 inline int CORRELATION = 0;
 
 bool show_hsv_mode = true;
 int GAUSSIAN = 3;
+
+// One of the following block can be used as the hsv filter for blue lines
+// int H_MIN = 86;
+// int S_MIN = 19;
+// int V_MIN = 113;
+// int H_MAX = 107;
+// int S_MAX = 39;
+// int V_MAX = 250;
+
 int H_MIN = 86;
-int S_MIN = 19;
-int V_MIN = 113;
+int S_MIN = 10;
+int V_MIN = 53;
 int H_MAX = 107;
-int S_MAX = 39;
+int S_MAX = 59;
 int V_MAX = 250;
 
 float PI = 3.14159265;
@@ -282,7 +290,6 @@ cv::createTrackbar(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME, nullptr, 127, 0)
 cv::createTrackbar(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME, nullptr, 127, 0);
 cv::createTrackbar(CVParams::HOUGH, CVParams::WINDOW_NAME, nullptr, 255, 0);
 cv::createTrackbar(CVParams::AREA, CVParams::WINDOW_NAME, nullptr, 500, 0);
-cv::createTrackbar(CVParams::NUM_OF_POINTS, CVParams::WINDOW_NAME, nullptr, 500, 0);
 
 // parameters for window testing
 // cv::createTrackbar("h", CVParams::WINDOW_NAME, nullptr, 255, 0);
@@ -313,7 +320,7 @@ const cv::Mat in_image_depth,
 const pcl::PointCloud<pcl::PointXYZRGB> in_pointcloud)
 const
 {
-int mode_param, shrink_min, shrink_max, hough_accumulator, num_of_points, num_of_lines;
+int mode_param, shrink_min, shrink_max, hough_accumulator, area, num_of_lines;
 
 // Create output images
 cv::Mat out_image_rgb, out_image_depth;
@@ -333,7 +340,7 @@ mode_param = cv::getTrackbarPos(CVParams::MODE, CVParams::WINDOW_NAME);
 shrink_min = cv::getTrackbarPos(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME);
 shrink_max = cv::getTrackbarPos(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME);
 hough_accumulator = cv::getTrackbarPos(CVParams::HOUGH, CVParams::WINDOW_NAME);
-num_of_points = cv::getTrackbarPos(CVParams::NUM_OF_POINTS, CVParams::WINDOW_NAME);
+area = cv::getTrackbarPos(CVParams::AREA, CVParams::WINDOW_NAME);
 
 // Option 1
 cv::Mat bw, filter, complex_image, filtered_image, shrink_bw, difference, expand_bw, eq_bw;
@@ -346,9 +353,9 @@ std::vector<cv::Vec4i> hierarchy;
 std::string text;
 
 // Default color values
-int h_window = 120;
-int s_window = 155;
-int v_window = 50;
+int h_window = 180; // 180 or 120
+int s_window = 255; // 255 or 155
+int v_window = 35; // 35 or 50
 
 cv::Scalar color;
 cv::Scalar lower(CVParams::H_MIN,CVParams::S_MIN,CVParams::V_MIN);
@@ -426,7 +433,7 @@ case 2:
 
   // Filter the color of the clocks
   cv::cvtColor(in_image_rgb, hsv, cv::COLOR_BGR2HSV);
-  cv::inRange(hsv, cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 35), thresh);
+  cv::inRange(hsv, cv::Scalar(0, 0, 0), cv::Scalar(h_window, s_window, v_window), thresh);
   cv::medianBlur(thresh, thresh, 3);
 
   // Edge detection
@@ -507,7 +514,7 @@ case 4:
   num_of_lines = 0;
 
   for (size_t i = 0; i < contours.size(); i++) {
-    if (static_cast<int>(contours[i].size()) > num_of_points)
+    if (static_cast<int>(contours[i].size()) > area)
     {
       num_of_lines++;
 
