@@ -17,12 +17,18 @@ Otro video se puede encontrar [aquí](img/practice.webm).
 ## Preguntas
 
 1. Adjunta una captura de los histogramas obtenidos en la opción 1 cuando los valores
-mínimo y máximo de la contracción son 125 y 126 respectivamente, y explica
+mínimo y máximo de la contracción son 127 y 128 respectivamente, y explica
 brevemente el comportamiento de cada histograma en dicha imagen.
 
 ![Imagen con Histograma](img/preg1.png)
 
+El histograma de la contracción es una barra vertical que solo tiene 2 valores 127 y 128.
 
+Luego el de la substracción de las 2 imágenes muestra el histograma de la imágen original desplazada 127 valores hacia atrás, pero da la vuelta y aparece en el otro lado. Esto ocurre por restar pixel a pixel y estar trabajando con uchar.
+
+El histograma de la expansión muestra el histograma anterior expandido entre 0 y 255, y se empiezan a ver barras verticales debido a que el rango de la imágen original es menor al de la imágen estirada, por lo tanto quedan huecos.
+
+Y por último el del histograma equalizado, se ve que ha repartido de manera más uniforme el histograma, ya que por ejemplo donde los valores eran más altos ahora se ha ensanchado, pero quedan más huecos.
 
 2. ¿Es posible acotar la dirección de las líneas detectadas en la transformada de Hough?
 En caso afirmativo, ¿cómo? Justifique la/s respuesta/s.
