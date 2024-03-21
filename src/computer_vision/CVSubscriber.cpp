@@ -102,6 +102,7 @@ return spectrum;
 namespace CVParams {
 
 inline bool running = false;
+inline bool hist_in_screen = false;
 
 inline std::string WINDOW_NAME = "Practica_5";
 inline std::string WINDOW_HIST_NAME = "Histograms";
@@ -388,9 +389,12 @@ bool uniform = true, accumulate = false;
 cv::Mat m;
 double min, max;
 
-// Option 2
-
 // ----------------------------------------------------------------
+
+if (mode_param != 1 && CVParams::hist_in_screen) {
+  CVParams::hist_in_screen = false;
+  cv::destroyWindow(CVParams::WINDOW_HIST_NAME);
+}
 
 switch (mode_param)
 {
@@ -423,6 +427,7 @@ case 1:
   cv::equalizeHist(expand_bw, eq_bw);
   cv::calcHist(&eq_bw, 1, 0, cv::Mat(), eqhist, 1, &histSize, &histRange, uniform, accumulate);
 
+  CVParams::hist_in_screen = true;
   CVFunctions::drawHistogram(histSize, hist_bw, hist_shrink, hist_subs, hist_expand, eqhist);
   cv::imshow(CVParams::WINDOW_NAME, eq_bw);
   break;
