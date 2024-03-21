@@ -20,7 +20,7 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 #include "rclcpp/rclcpp.hpp"
- 
+
 // Copied because it is only allowed to edit this file
 // Compute the Discrete fourier transform
 cv::Mat computeDFT(const cv::Mat &image)
@@ -102,6 +102,7 @@ return spectrum;
 namespace CVParams {
 
 inline bool running = false;
+inline bool hist_in_screen = false;
 
 inline std::string WINDOW_NAME = "Practica_5";
 inline std::string WINDOW_HIST_NAME = "Histograms";
@@ -194,7 +195,7 @@ void drawCentroid(std::vector<cv::Point> contour, cv::Scalar color, cv::Mat targ
   int cy = static_cast<int>(m.m01 / m.m00);
 
   // Draw the mark into the image
-  cv::circle(target_image, cv::Point(cx, cy), 5, color, -1); 
+  cv::circle(target_image, cv::Point(cx, cy), 5, color, -1);
   std::string text = std::to_string(contour.size());
   cv::putText(target_image, text, cv::Point(cx, cy - 10), cv::FONT_HERSHEY_SIMPLEX, 0.5, color, 2);
 
@@ -335,7 +336,7 @@ out_pointcloud = in_pointcloud;
 // First time execution
 CVFunctions::initWindow();
 
-// Obtaining Parameter 
+// Obtaining Parameter
 mode_param = cv::getTrackbarPos(CVParams::MODE, CVParams::WINDOW_NAME);
 shrink_min = cv::getTrackbarPos(CVParams::SHRINK_MIN, CVParams::WINDOW_NAME);
 shrink_max = cv::getTrackbarPos(CVParams::SHRINK_MAX, CVParams::WINDOW_NAME);
@@ -388,9 +389,12 @@ bool uniform = true, accumulate = false;
 cv::Mat m;
 double min, max;
 
-// Option 2
-
 // ----------------------------------------------------------------
+
+if (mode_param != 1 && CVParams::hist_in_screen) {
+  CVParams::hist_in_screen = false;
+  cv::destroyWindow(CVParams::WINDOW_HIST_NAME);
+}
 
 switch (mode_param)
 {
@@ -412,7 +416,7 @@ case 1:
   cv::calcHist(&shrink_bw, 1, 0, cv::Mat(), hist_shrink, 1, &histSize, &histRange, uniform, accumulate);
 
   // Combine the 2 images
-  difference = CVFunctions::substractImages(bw, shrink_bw);    
+  difference = CVFunctions::substractImages(bw, shrink_bw);
   cv::calcHist(&difference, 1, 0, cv::Mat(), hist_subs, 1, &histSize, &histRange, uniform, accumulate);
 
   // Expand the histogram
@@ -423,6 +427,7 @@ case 1:
   cv::equalizeHist(expand_bw, eq_bw);
   cv::calcHist(&eq_bw, 1, 0, cv::Mat(), eqhist, 1, &histSize, &histRange, uniform, accumulate);
 
+  CVParams::hist_in_screen = true;
   CVFunctions::drawHistogram(histSize, hist_bw, hist_shrink, hist_subs, hist_expand, eqhist);
   cv::imshow(CVParams::WINDOW_NAME, eq_bw);
   break;

@@ -12,6 +12,59 @@ This package is recommended to use with the [TIAGO](https://github.com/jmguerrer
 ## Exercise 3 Video
 [Link_to_video.mp4](https://drive.google.com/file/d/15NIynJxYtdAGjDB31UIq1Ajo-4wTLSkU/view?usp=sharing)
 
+Otro video se puede encontrar [aquí](img/practice.webm).
+
+## Preguntas
+
+1. Adjunta una captura de los histogramas obtenidos en la opción 1 cuando los valores
+mínimo y máximo de la contracción son 127 y 128 respectivamente, y explica
+brevemente el comportamiento de cada histograma en dicha imagen.
+
+![Imagen con Histograma](img/preg1.png)
+
+El histograma de la contracción es una barra vertical que solo tiene 2 valores 127 y 128.
+
+Luego el de la substracción de las 2 imágenes muestra el histograma de la imágen original desplazada 127 valores hacia atrás, pero da la vuelta y aparece en el otro lado. Esto ocurre por restar pixel a pixel y estar trabajando con uchar.
+
+El histograma de la expansión muestra el histograma anterior expandido entre 0 y 255, y se empiezan a ver barras verticales debido a que el rango de la imágen original es menor al de la imágen estirada, por lo tanto quedan huecos.
+
+Y por último el del histograma equalizado, se ve que ha repartido de manera más uniforme el histograma, ya que por ejemplo donde los valores eran más altos ahora se ha ensanchado, pero quedan más huecos.
+
+2. ¿Es posible acotar la dirección de las líneas detectadas en la transformada de Hough?
+En caso afirmativo, ¿cómo? Justifique la/s respuesta/s.
+
+Si es posible acotar la dirección de las líneas detectadas en la transformada de Hough con el ángulo theta:
+
+```cpp
+float theta = lines[i][1];
+```
+
+Por ejemplo si queremos obtener la líneas que son aproximadamente verticales podemos usar el siguiente if dentro del bucle:
+
+```cpp
+  // Draw the lines
+  for (size_t i = 0; i < lines.size(); i++) {
+    float rho = lines[i][0], theta = lines[i][1];
+    if (theta > 0.5 || theta < -0.5) continue; // Este
+    cv::Point pt1, pt2;
+    double a = std::cos(theta), b = std::sin(theta);
+    double x0 = a * rho, y0 = b * rho;
+    pt1.x = cvRound(x0 + 1000 * (-b));
+    pt1.y = cvRound(y0 + 1000 * ( a));
+    pt2.x = cvRound(x0 - 1000 * (-b));
+    pt2.y = cvRound(y0 - 1000 * ( a));
+    cv::line(out_image_rgb, pt1, pt2, cv::Scalar(0, 0, 255), 3, cv::LINE_AA);
+  }
+```
+
+O si queremos las horizontales:
+
+```cpp
+if (theta < 1.2 || theta > 1.8) continue;
+```
+
+Siempre hay que tener en cuenta que theta esta en radianes, por lo tanto 90º son 1.57.
+
 # Installation 
 
 You need to have previously installed ROS 2. Please follow this [guide](https://docs.ros.org/en/humble/Installation.html) if you don't have it.
