@@ -9,10 +9,6 @@ This project contains code examples created in Visual Studio Code for Computer V
 
 This package is recommended to use with the [TIAGO](https://github.com/jmguerreroh/tiago_simulator) simulator.
 
-## Exercise 3 Video
-[Link_to_video.mp4](https://drive.google.com/file/d/15NIynJxYtdAGjDB31UIq1Ajo-4wTLSkU/view?usp=sharing)
-
-Otro video se puede encontrar [aquí](img/practice.webm).
 
 ## Preguntas
 
@@ -62,8 +58,17 @@ O si queremos las horizontales:
 ```cpp
 if (theta < 1.2 || theta > 1.8) continue;
 ```
-
 Siempre hay que tener en cuenta que theta esta en radianes, por lo tanto 90º son 1.57.
+
+**IMPORTANTE:**
+
+El ejercicio numero 4 usa filtros de color para encontrar los bordes, sin embargo los valores de este filtro pueden variar ligeramente en distintas maquinas.
+
+En caso de no coincidir con la ejecución local, se puede cambiar los valores hsv en el código enviado o visualizar la ejecucción correcta en 2 máquinas distintas a traves de los siguientes videos:
+
+- [video_1.mp4](https://drive.google.com/file/d/15NIynJxYtdAGjDB31UIq1Ajo-4wTLSkU/view?usp=sharing)
+- [video_2.mp4](img/practice.webm).
+
 
 # Installation 
 
