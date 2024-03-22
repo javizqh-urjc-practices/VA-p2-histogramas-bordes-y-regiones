@@ -399,20 +399,28 @@ if (mode_param != 1 && CVParams::hist_in_screen) {
 switch (mode_param)
 {
 case 1:
+  {
   cv::cvtColor(in_image_rgb, bw, cv::COLOR_BGR2GRAY);
   cv::minMaxLoc(bw, &min, &max);
   cv::calcHist(&bw, 1, 0, cv::Mat(), hist_bw, 1, &histSize, &histRange, uniform, accumulate);
 
   // Filtering Spectrum
   complex_image = fftShift(computeDFT(bw));
-  filter = CVFunctions::createLowPassFilter(complex_image, 20);
+  filter = CVFunctions::createLowPassFilter(complex_image, 50);
   cv::mulSpectrums(complex_image, filter, complex_image, 0);
   complex_image = fftShift(complex_image);
   cv::idft(complex_image, filtered_image, cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
   cv::normalize(filtered_image, filtered_image, 0, 1, cv::NORM_MINMAX);
 
+  cv::Mat tmp2(bw.rows, bw.cols, CV_8U);
+  for (int i = 0; i < bw.rows; i++) {
+    for (int j = 0; j < bw.cols; j++) {
+      tmp2.at<u_char>(i, j) = (u_char)(255*filtered_image.at<float>(i, j));
+    }
+  }
+
   // Calculating histogram and shrink
-  shrink_bw = CVFunctions::contractHistogram(bw, max, min, shrink_max + 128, shrink_min);
+  shrink_bw = CVFunctions::contractHistogram(tmp2, max, min, shrink_max + 128, shrink_min);
   cv::calcHist(&shrink_bw, 1, 0, cv::Mat(), hist_shrink, 1, &histSize, &histRange, uniform, accumulate);
 
   // Combine the 2 images
@@ -431,6 +439,7 @@ case 1:
   CVFunctions::drawHistogram(histSize, hist_bw, hist_shrink, hist_subs, hist_expand, eqhist);
   cv::imshow(CVParams::WINDOW_NAME, eq_bw);
   break;
+  }
 case 2:
 {
   cv::Mat edges, hsv, thresh;

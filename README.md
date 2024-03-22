@@ -9,22 +9,21 @@ This project contains code examples created in Visual Studio Code for Computer V
 
 This package is recommended to use with the [TIAGO](https://github.com/jmguerreroh/tiago_simulator) simulator.
 
-
 ## Preguntas
 
 1. Adjunta una captura de los histogramas obtenidos en la opción 1 cuando los valores
 mínimo y máximo de la contracción son 127 y 128 respectivamente, y explica
 brevemente el comportamiento de cada histograma en dicha imagen.
 
-![Imagen con Histograma](img/preg1.png)
+![Imagen con Histograma](img/ej1_bien.png)
 
 El histograma de la contracción es una barra vertical que solo tiene 2 valores 127 y 128.
 
-Luego el de la substracción de las 2 imágenes muestra el histograma de la imágen original desplazada 127 valores hacia atrás, pero da la vuelta y aparece en el otro lado. Esto ocurre por restar pixel a pixel y estar trabajando con uchar.
+Luego el de la substracción de las 2 imágenes muestra el histograma de la imágen original desplazada 127 valores hacia atrás, pero una parte da la vuelta y aparece en el otro lado. Esto ocurre por restar pixel a pixel y estar trabajando con u_char.
 
 El histograma de la expansión muestra el histograma anterior expandido entre 0 y 255, y se empiezan a ver barras verticales debido a que el rango de la imágen original es menor al de la imágen estirada, por lo tanto quedan huecos.
 
-Y por último el del histograma equalizado, se ve que ha repartido de manera más uniforme el histograma, ya que por ejemplo donde los valores eran más altos ahora se ha ensanchado, pero quedan más huecos.
+Y por último el del histograma equalizado, se ve que ha repartido de manera más uniforme el histograma, ya que por ejemplo donde los valores eran más altos ahora se ha ensanchado, pero quedan más huecos. Y los valores más altos se han centrado en el centro del histograma.
 
 2. ¿Es posible acotar la dirección de las líneas detectadas en la transformada de Hough?
 En caso afirmativo, ¿cómo? Justifique la/s respuesta/s.
@@ -67,8 +66,7 @@ El ejercicio numero 4 usa filtros de color para encontrar los bordes, sin embarg
 En caso de no coincidir con la ejecución local, se puede cambiar los valores hsv en el código enviado o visualizar la ejecucción correcta en 2 máquinas distintas a traves de los siguientes videos:
 
 - [video_1.mp4](https://drive.google.com/file/d/15NIynJxYtdAGjDB31UIq1Ajo-4wTLSkU/view?usp=sharing)
-- [video_2.mp4](img/practice.webm) (Descargar para su visualización).
-
+- Otros videos se puede encontrar [aquí](https://github.com/javizqh/video_vision).
 
 # Installation 
 
