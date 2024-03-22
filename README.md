@@ -67,7 +67,7 @@ El ejercicio numero 4 usa filtros de color para encontrar los bordes, sin embarg
 En caso de no coincidir con la ejecución local, se puede cambiar los valores hsv en el código enviado o visualizar la ejecucción correcta en 2 máquinas distintas a traves de los siguientes videos:
 
 - [video_1.mp4](https://drive.google.com/file/d/15NIynJxYtdAGjDB31UIq1Ajo-4wTLSkU/view?usp=sharing)
-- [video_2.mp4](img/practice.webm).
+- [video_2.mp4](img/practice.webm) (Descargar para su visualización).
 
 
 # Installation 
