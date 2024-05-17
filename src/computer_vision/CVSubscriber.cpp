@@ -401,7 +401,6 @@ switch (mode_param)
 case 1:
   {
   cv::cvtColor(in_image_rgb, bw, cv::COLOR_BGR2GRAY);
-  cv::minMaxLoc(bw, &min, &max);
   cv::calcHist(&bw, 1, 0, cv::Mat(), hist_bw, 1, &histSize, &histRange, uniform, accumulate);
 
   // Filtering Spectrum
@@ -410,11 +409,12 @@ case 1:
   cv::mulSpectrums(complex_image, filter, complex_image, 0);
   complex_image = fftShift(complex_image);
   cv::idft(complex_image, filtered_image, cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
-  cv::normalize(filtered_image, filtered_image, 0, 255, cv::NORM_MINMAX); // Puede ser con o sin
+  cv::normalize(filtered_image, filtered_image, 0, 255, cv::NORM_MINMAX);
 
   filtered_image.convertTo(filtered_image, CV_8U);
 
   // Calculating histogram and shrink
+  cv::minMaxLoc(filtered_image, &min, &max);
   shrink_bw = CVFunctions::contractHistogram(filtered_image, max, min, shrink_max + 128, shrink_min);
   cv::calcHist(&shrink_bw, 1, 0, cv::Mat(), hist_shrink, 1, &histSize, &histRange, uniform, accumulate);
 
@@ -423,6 +423,7 @@ case 1:
   cv::calcHist(&difference, 1, 0, cv::Mat(), hist_subs, 1, &histSize, &histRange, uniform, accumulate);
 
   // Expand the histogram
+  cv::minMaxLoc(difference, &min, &max);
   expand_bw = CVFunctions::expandHistogram(difference, max, min, range[1], range[0]);
   cv::calcHist(&expand_bw, 1, 0, cv::Mat(), hist_expand, 1, &histSize, &histRange, uniform, accumulate);
 
