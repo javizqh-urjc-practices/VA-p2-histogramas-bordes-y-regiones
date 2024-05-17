@@ -164,7 +164,7 @@ return horiz_Filter;
 cv::Mat expandHistogram(const cv::Mat &image, const double max, const double min,
                         const int max_range, const int min_range)
 {
-cv::Mat tmp(image.rows, image.cols, CV_8U);
+cv::Mat tmp(image.rows, image.cols, image.type());
 
 for (int i = 0; i < image.rows; i++) {
   for (int j = 0; j < image.cols; j++) {
@@ -178,7 +178,7 @@ return tmp;
 cv::Mat contractHistogram(const cv::Mat &image, const double max, const double min,
                         const int shrink_max, const int shrink_min)
 {
-cv::Mat tmp(image.rows, image.cols, CV_8U);
+cv::Mat tmp(image.rows, image.cols, image.type());
 for (int i = 0; i < image.rows; i++) { for (int j = 0; j < image.cols; j++) {
     tmp.at<u_char>(i, j) = ((shrink_max - shrink_min)/(max - min)) * (image.at<u_char>(i, j) - min) + shrink_min;
   }
@@ -410,17 +410,12 @@ case 1:
   cv::mulSpectrums(complex_image, filter, complex_image, 0);
   complex_image = fftShift(complex_image);
   cv::idft(complex_image, filtered_image, cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
-  cv::normalize(filtered_image, filtered_image, 0, 1, cv::NORM_MINMAX);
+  cv::normalize(filtered_image, filtered_image, 0, 255, cv::NORM_MINMAX); // Puede ser con o sin
 
-  cv::Mat tmp2(bw.rows, bw.cols, CV_8U);
-  for (int i = 0; i < bw.rows; i++) {
-    for (int j = 0; j < bw.cols; j++) {
-      tmp2.at<u_char>(i, j) = (u_char)(255*filtered_image.at<float>(i, j));
-    }
-  }
+  filtered_image.convertTo(filtered_image, CV_8U);
 
   // Calculating histogram and shrink
-  shrink_bw = CVFunctions::contractHistogram(tmp2, max, min, shrink_max + 128, shrink_min);
+  shrink_bw = CVFunctions::contractHistogram(filtered_image, max, min, shrink_max + 128, shrink_min);
   cv::calcHist(&shrink_bw, 1, 0, cv::Mat(), hist_shrink, 1, &histSize, &histRange, uniform, accumulate);
 
   // Combine the 2 images
